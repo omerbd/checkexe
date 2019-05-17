@@ -1,16 +1,15 @@
-"# checkexe"
+"# CheckExe"
 # Omer Ben David
-# April 2019
+# May 2019
 
+# Description:
+A simple tool aimed at people with little knowledge in viruses and in monitoring internet data who want to check a .exe file that may harm their computer.
 
+# Installing:
+using the batch file included here (will be included later as of 17/5/2019)
 
-# installing:
-using the bash file included here
-
-# how to use:
-1.open cmd <br />
-2. cd to C:/sandbox <br />
-3. use the bash file <br />
-4. enter your mail address <br />
-5. enter the name of the process <br />
-6. wait for the results in your email\ the error message <br />
+# How to use:
+1.Download the package <br />
+2. Use the batch file to install (will be added later) <br />
+3. Click the check_setup.py and enter the path of the .exe you want to check and your mail <br />
+4. Wait for the message that says that you're done and check the results in your mail <br />
