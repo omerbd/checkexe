@@ -12,11 +12,11 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "vmbox.box" #the name of the box
-  	#config.vm.provider "virtualbox" do |v|
+  config.vm.box = "vmbox2.box" #the name of the box
+  	config.vm.provider "virtualbox" do |v|
 		#v.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]  # can't take more than 50% of CPU
-		#v.memory = 2048  #can deal with 2gb memory
-	#end
+		v.memory = 8192  #can deal with 2gb memory
+	end
   config.vm.communicator = "winrm"
   
     config.winrm.username = "vagrant"
