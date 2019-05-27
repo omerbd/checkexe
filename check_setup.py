@@ -40,22 +40,14 @@ def drop_upload(exe_path, exe_name):
 def delete_files():
     """Delete all the files that are left after the VM finishes its job."""
     try:
-        shutil.rmtree('c:/sandbox/.vagrant')
-        try:
-            shutil.rmtree('c:/sandbox/vm/.vagrant')
-            try:
-                os.remove('Vagrantfile')
-            except DELETING_ERROR:
-                pass
-        except DELETING_ERROR:
-            pass
+        subprocess.check_output('python delete_files.py')
     except DELETING_ERROR:
-        pass
+        print ('CheckExe could not delete those files.')
 
 
 def vagrant_start():
     """Starts the VM. """
-    init_cmd = 'vagrant init vmbox2.box'
+    init_cmd = 'vagrant init checkexe.box'
     up_cmd = 'vagrant up'
     try:
         space = shutil.disk_usage("c:/")  # check how much room is in the disk
@@ -97,23 +89,10 @@ def vagrant_start():
 
 def destroy_vagrant():
     """The VM is destroyed after the end of its use."""
-    shutdown_cmd = "vagrant winrm -c 'shutdown -s -t 0'"
-    halt_cmd = "vagrant halt -f"
-    dest_cmd = "vagrant destroy -f"
-    try:  # first you halt the machine so it won't be forced
-        time.sleep(15)
-        subprocess.check_output(shutdown_cmd, shell=True)
-        try:
-            subprocess.check_output(halt_cmd, shell=True)
-            try:
-                subprocess.check_output(dest_cmd, shell=True)
-            except subprocess.CalledProcessError:
-                print('Vagrant cannot destroy itself.')
-        except subprocess.CalledProcessError:
-            print('Vagrant cannot prune itself.')
-    except subprocess.CalledProcessError:
-        print('Vagrant cannot halt.')
-
+    try:
+        subprocess.check_output('python destroy.py')
+    except (socket.error, ArgumentError) as e:
+        pass
 def winrm_failed():
     """If winrm connection failes mid-through, this proc will delete all of the 'leftovers' and destroy the machine."""
     try:
@@ -176,21 +155,21 @@ def main():
                 time.sleep(15)
                 try:
                     winrm_call(mail_name, exe_name)
+                    time.sleep(60)
                     try:
-                        destroy_vagrant()
+                        subprocess.check_output('python bin/destroy.py')
                         try:
-                            delete_files()
-                        except subprocess.CalledProcessError:
+                            subprocess.check_output('python bin/delete_files.py')
+                        except (subprocess.CalledProcessError, FileNotFoundError, OSError) as error:
                             pass
-                    except subprocess.CalledProcessError:
-                        print('Vagrant cannot destroy itself.')
+                    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as error:
+                        pass
                 except Exception as winrm_error:
                     print(winrm_error)
             except Exception as vagrant_error:
                 print(vagrant_error)
         except FileNotFoundError:
-            print(
-                'CheckExe cannot copy the file into Dropbox. Check if you entered the path correctly.')
+            print('CheckExe cannot copy the file into Dropbox. Check if you entered the path correctly.')
         except dropbox.exceptions.ApiError:
             print("CheckExe can't upload your file to DropBox. Please try again.")
             delete_files()
