@@ -21,6 +21,10 @@ def input_check(exe_path, mail_name):
         return "You didn't enter any exe path.please try again."  # if only the path is blank
     if mail_name == '':  # if the mail is blank
         return "You didn't enter any mail name. please try again."
+    point=exe_path.find('.')
+    extension=exe_path[point:]
+    if extension!='.exe':
+        return "The file is not an .exe. Please try again"
     is_valid = mail_name.find('@gmail.com')
     if is_valid < 0 or is_valid == 0:  # if there is no '@gmail.com', find function will return -1
         return 'mail is not valid. please try again'
@@ -47,7 +51,7 @@ def delete_files():
 
 def vagrant_start():
     """Starts the VM. """
-    init_cmd = 'vagrant init checkexe.box'
+    init_cmd = 'vagrant init checkexebox.box'
     up_cmd = 'vagrant up'
     try:
         space = shutil.disk_usage("c:/")  # check how much room is in the disk
@@ -108,7 +112,7 @@ def winrm_failed():
 
 def winrm_call(mail_name, exe_name):
     """Downloads the file into the machine, runs it and then compiles a report on its internet activity."""
-    drop_cmd = "vagrant winrm -c 'python C:\\sandbox\\drop_down.py /"+exe_name+"'"
+    drop_cmd = "vagrant winrm -c 'python C:\\sandbox\\drop_down.py /checkexe/"+exe_name+"'"
     run_cmd = "vagrant winrm -c 'C:\\users\\vagrant\\documents\\check.exe'"
     report_cmd = "vagrant winrm -c 'python C:\\sandbox\\vm_inside_functions.py " + \
         mail_name+" check'"

@@ -7,6 +7,12 @@ A simple tool aimed at people with little knowledge in viruses and in monitoring
 
 # Installing:
 using the batch file included here (will be included later as of 17/5/2019)
+if the batch is not prepared yet, please follow:
+1. Create a sandbox dir in C:/
+2. move the Vagrantfile into it
+3. create a vm dir inside the sandbox dir
+4. Move the .box file into it and the check_setup.py
+5. create a bin dir inside the vm dir and move destroy.py and delete_files.py in there
 
 # How to use:
 1.Download the package <br />
