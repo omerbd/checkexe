@@ -8,6 +8,8 @@ import sys
 import smtplib
 import time
 import dropbox
+import socket
+from tkinter import messagebox
 
 # a recurring error in deleting files
 DELETING_ERROR = (FileNotFoundError, OSError)
@@ -21,9 +23,9 @@ def input_check(exe_path, mail_name):
         return "You didn't enter any exe path.please try again."  # if only the path is blank
     if mail_name == '':  # if the mail is blank
         return "You didn't enter any mail name. please try again."
-    point=exe_path.find('.')
-    extension=exe_path[point:]
-    if extension!='.exe':
+    point = exe_path.find('.')
+    extension = exe_path[point:]
+    if extension != '.exe':
         return "The file is not an .exe. Please try again"
     is_valid = mail_name.find('@gmail.com')
     if is_valid < 0 or is_valid == 0:  # if there is no '@gmail.com', find function will return -1
@@ -32,7 +34,6 @@ def input_check(exe_path, mail_name):
     if slash != -1:
         return "ERROR you used the oppsite slash in your path. Please try again."
     return True  # if all the conditions are OK
-
 
 def drop_upload(exe_path, exe_name):
     dbx = dropbox.Dropbox(
@@ -44,9 +45,9 @@ def drop_upload(exe_path, exe_name):
 def delete_files():
     """Delete all the files that are left after the VM finishes its job."""
     try:
-        subprocess.check_output('python delete_files.py')
+        subprocess.check_output('python c:/sandbox/vm/bin/delete_files.py')
     except DELETING_ERROR:
-        print ('CheckExe could not delete those files.')
+        print('CheckExe could not delete those files.')
 
 
 def vagrant_start():
@@ -57,35 +58,36 @@ def vagrant_start():
         space = shutil.disk_usage("c:/")  # check how much room is in the disk
         free_gb = space.free/(2**30)
         if free_gb < 30:
-            print('you need at least 30gb free space. you have '+str(free_gb))
+            messagebox.showwarning("CheckExe 1.0.0",'You need at least 30gb free space. you have '+str(free_gb))
             sys.exit()
         try:
             subprocess.check_output(init_cmd, shell=True)
-            print('init done')
+            messagebox.showinfo("CheckExe 1.0.0",'init done')
             try:
                 os.remove('Vagrantfile')  # delete the wrong Vagrantfile
                 try:
                     # copies the correct Vagrantfile into the folder
                     shutil.copyfile('c:/sandbox/Vagrantfile',
                                     'c:/sandbox/vm/Vagrantfile')
-                    print('init moved')
+                    messagebox.showinfo("CheckExe 1.0.0",'init moved')
+                    messagebox.showinfo("CheckExe 1.0.0",'15-30 seconds from now you will not be able to exit because vagrant will be locked.')
                     try:
                         subprocess.check_output(up_cmd, shell=True)
-                        print('vm up')
+                        messagebox.showinfo("CheckExe 1.0.0",'vm up')
                     except subprocess.CalledProcessError:
-                        print(
+                        messagebox.showerror("CheckExe 1.0.0",
                             "CheckExe can't get the virtual machine up. Please try again.")
                         try:
                             delete_files()
                         except DELETING_ERROR as error:
                             print(error)
                 except (OSError, FileNotFoundError) as Vagrantfile_error:
-                    print(
+                    messagebox.showerror("CheckExe 1.0.0",
                         "CheckExe can't move the correct Vagrantfile into the folder.")
             except OSError:
-                print("CheckExe can't delete the current Vagrantfile")
+                messagebox.showerror("CheckExe 1.0.0","CheckExe can't delete the current Vagrantfile")
         except subprocess.CalledProcessError:
-            print("Vagrant init failed.Please try again")
+            messagebox.showerror("CheckExe 1.0.0","Vagrant init failed.Please try again")
             sys.exit()
     except Exception as space_error:
         print(space_error)
@@ -94,9 +96,11 @@ def vagrant_start():
 def destroy_vagrant():
     """The VM is destroyed after the end of its use."""
     try:
-        subprocess.check_output('python destroy.py')
-    except (socket.error, ArgumentError) as e:
+        subprocess.check_output('python c:/sandbox/vm/bin/destroy.py')
+    except (socket.error) as e:
         pass
+
+
 def winrm_failed():
     """If winrm connection failes mid-through, this proc will delete all of the 'leftovers' and destroy the machine."""
     try:
@@ -119,66 +123,88 @@ def winrm_call(mail_name, exe_name):
     try:
         # downloads the file from dropbox
         subprocess.check_output(drop_cmd, shell=True)
-        print('The file was downloaded.')
+        messagebox.showinfo("CheckExe 1.0.0",'The file was downloaded.')
         try:
             # runs the machine. it is Popen and not check_output because the latter is a blocking function
             subprocess.Popen(run_cmd)
-            print('The file is running.')
+            messagebox.showinfo("CheckExe 1.0.0",'The file is running.')
             try:
                 # prints the message from vm_inside_functions and compiles the report
-                print(subprocess.check_output(report_cmd, shell=True))
+                report_message = subprocess.check_output(
+                    report_cmd, shell=True)
+                messagebox.showinfo("CheckExe 1.0.0",report_message.decode("utf-8"))
             except subprocess.CalledProcessError:
-                print("CheckExe have failed to make a report.")
+                messagebox.showerror("CheckExe 1.0.0","CheckExe have failed to make a report.")
                 # uses the proc for situations where the winrm commands or winrm connection failed.
                 winrm_failed()
             except (SMTPAuthenticationError, Microsoft.PowerShell.Commands) as email_error:
-                print('Your email was invalid. Please try again')
+                messagebox.showerror("CheckExe 1.0.0",'Your email was invalid. Please try again')
                 winrm_failed()
         except subprocess.CalledProcessError:
-            print("CheckExe couldn't run the file inside the virtual machine.")
+            messagebox.showerror("CheckExe 1.0.0","CheckExe couldn't run the file inside the virtual machine.")
             winrm_failed()
     except (subprocess.CalledProcessError, dropbox.exceptions.ApiError) as dropbox_error:
-        print("CheckExe can't download the file from Dropbox into the virtual machine. Please try again.")
+        messagebox.showerror("CheckExe 1.0.0","CheckExe can't download the file from Dropbox into the virtual machine. Please try again.")
         winrm_failed()
 
 
 def main():
-    # the path of the file you want to check
-    exe_path = input(
-        'please enter the path of the exe you want to check, with only / between folders: ')
-    # the mail to which the report will be sent
-    mail_name = input('please enter your gmail address: ')
-    check = input_check(exe_path, mail_name)  # cheking the input
-    if check == True:  # if the input is OK
-        exe_split = exe_path.split('/')
-        exe_name = exe_split[-1]  # extract the name from the path
         try:
-            drop_upload(exe_path, exe_name)
-            try:
-                vagrant_start()
-                time.sleep(15)
+            subprocess.check_output('python c:/sandbox/vm/bin/delete_files.py')
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            pass
+        try:
+            # the path of the file you want to check
+            # the mail to which the report will be sent
+            #mail_name = input('please enter your gmail address: ')
+            exe_path=sys.argv[1]
+            mail_name=sys.argv[2]
+            check=(input_check(exe_path,mail_name))
+            if check==True:
+                messagebox.showinfo("CheckExe 1.0.0","Welcome to CheckExe, a powerful tool that lets you know if you should run the program you just received! To exit, press CTRL+C.")
+                exe_split = exe_path.split('/')
+                exe_name = exe_split[-1]  # extract the name from the path
                 try:
-                    winrm_call(mail_name, exe_name)
-                    time.sleep(60)
+                    drop_upload(exe_path, exe_name)
                     try:
-                        subprocess.check_output('python bin/destroy.py')
+                        vagrant_start()
+                        time.sleep(15)
                         try:
-                            subprocess.check_output('python bin/delete_files.py')
-                        except (subprocess.CalledProcessError, FileNotFoundError, OSError) as error:
-                            pass
-                    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as error:
-                        pass
-                except Exception as winrm_error:
-                    print(winrm_error)
-            except Exception as vagrant_error:
-                print(vagrant_error)
-        except FileNotFoundError:
-            print('CheckExe cannot copy the file into Dropbox. Check if you entered the path correctly.')
-        except dropbox.exceptions.ApiError:
-            print("CheckExe can't upload your file to DropBox. Please try again.")
+                            winrm_call(mail_name, exe_name)
+                            time.sleep(60)
+                            try:
+                                subprocess.check_output(
+                                    'python c:/sandbox/vm/bin/destroy.py')
+                                try:
+                                    subprocess.check_output(
+                                        'python c:/sandbox/vm/bin/delete_files.py')
+                                    messagebox.showinfo("CheckExe 1.0.0",'CheckExe is done with its check. Have a plesant day!')
+                                except (subprocess.CalledProcessError, FileNotFoundError, OSError) as error:
+                                    pass
+                            except (subprocess.CalledProcessError, FileNotFoundError, OSError) as error:
+                                pass
+                        except Exception as winrm_error:
+                            print(winrm_error)
+                    except Exception as vagrant_error:
+                        print(vagrant_error)
+                except FileNotFoundError:
+                    messagebox.showerror("CheckExe 1.0.0",
+                        'CheckExe cannot copy the file into Dropbox. Check if you entered the path correctly.')
+                except dropbox.exceptions.ApiError:
+                    messagebox.showerror("CheckExe 1.0.0",
+                        "CheckExe can't upload your file to DropBox. Please try again.")
+                    delete_files()
+            else:
+                messagebox.showerror("CheckExe 1.0.0", check)
+        except KeyboardInterrupt:
             delete_files()
-    else:
-        print(check)
+            destroy_vagrant()
+            time.sleep(10)
+            messagebox.showwarning("CheckExe 1.0.0", "You exited CheckExe. Do not pay attention to the Vagrant Message.")
+            sys.exit()
+        except IndexError:
+            messagebox.showerror("CheckExe 1.0.0","You didn't enter all the parameters. Please try again.")
+            sys.exit()
 
 
 if __name__ == "__main__":

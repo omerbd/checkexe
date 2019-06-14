@@ -11,3 +11,5 @@ except subprocess.CalledProcessError:
     pass
 except socketError:
     pass
+except KeyboardInterrupt:
+    pass
